@@ -17,3 +17,11 @@ Django registers the built in commands and then searches for the commands in the
 
 ### `BaseCommand.execute(*args, **options)`
 Tries to execute the current command. execute is actually not be called directly from your code, rather use the `call_command()` method.
+
+### BaseCommand subclasses
+- **`class AppCommand`**
+	A management command which takes one or more installed application labels as arguments and does something to each of them. 
+	Rather than implementing `handle()`, this subclass must implement the `handle_app_config()` method.
+
+	`AppCommand.handle_app_config(app_config, **options)`: This method would perform the command's action for app_config which 
+	will be an `AppConfig` instance corresponding to an application label given on the command line.
