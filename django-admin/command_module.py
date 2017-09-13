@@ -43,3 +43,23 @@ class Command(BaseCommand):
         # require a project-neutral string language.
         # However if our code requires some locale we need to manually activate
         # it in the following way.
+        from django.utils import translation
+
+        translation.activate('ru')
+
+        # or import from settings
+        from django.conf import settings
+        translation.activate(settings.LANGUAGE_CODE)
+        """
+        Whatever we need to perform with the locale
+        """
+        translation.deactivate()
+        # If we want to leave the translation as it is and do not wanna deactivate it we can do so using the following option
+        # To do this we need to use the BaseCommand.leave_locale_alone option. However make sure that the USE_I18N setting
+        # is always on while runnning the command.
+
+
+
+
+
+        
