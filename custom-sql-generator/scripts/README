@@ -1,0 +1,7 @@
+== Instructions ==
+
+https://docs.djangoproject.com/en/1.4/howto/custom-management-commands/
+
+Commands:
+- python manage.py sqlproject
+- python manage.py sqlallproject
