@@ -17,7 +17,11 @@ def task_list(request):
     """
     if request.method == "GET":
         tasks = Task.objects.all()
-        serializer = TaskSerializer(tasks)
+
+        # tasks here is a query set. So we are essentially passing the entire query set into the serializer
+        # the many=True attribute here is super important. Without this attribute an error would be raised
+
+        serializer = TaskSerializer(tasks, many=True)
         return Response(serializer.data)
 
     elif request.method == "POST":

@@ -26,33 +26,33 @@ INSTALLED_APPS = (
 
 urls.py of the entire django project
 ```python
-from django.conf.urls import patterns, include, url
-
+from django.urls import path
 from django.contrib import admin
-admin.autodiscover()
+from django.urls import include
 
-urlpatterns = patterns(
-	'',
-	url(r'^api/', include('api.urls')), # here is the api url we were talking about. 
-	# Here we are simply including the api urls file
-	url(r'^admin/', include(admin.site.urls))
-	)
-
+urlpatterns = [
+    path('admin/', admin.site.urls),
+    path('api/',include('api_demo.urls'))
+]
 ```
 
 urls.py of the app api
 ```python
-from django.conf.urls import patterns, url
+from django.urls import path, re_path
 
-urlpatterns = patterns(
-	'api.views',
-	url(r'^tasks/$', 'task_list', name='task_list'), # these are basically the 2 types of api calls possible
-	# 'task_list' is the name of the function in the view that is going to be called
-	# here note that we are using function based views and not class based views
-	url(r'^tasks/(?P<pk>[0-9]+)$') 
-	# this regex actually tells us that after tasks there can be one number specifying the primary key of the task
-	# basically a unique number
-	)
+from . import views
+
+# Make sure that in the app urls file, you use views
+
+urlpatterns = [
+    path('tasks', views.task_list, name="task_list"),
+    # these are basically the 2 types of api calls possible
+    # 'task_list' is the name of the function in the view that is going to be called
+    #  here note that we are using function based views and not class based views
+    re_path('tasks/(?P<pk>[0-9]+)', views.task_detail, name="task_detail")
+    # this regex actually tells us that after tasks there can be one number specifying the primary key of the task
+    #  basically a unique number
+]
 ```
 
 ### Building a serializer
@@ -97,8 +97,8 @@ from rest_framework import status
 from rest_framework.decorators import api_view
 from rest_framework.response import Response
 
-from task.models import Task
-from api.serializers import TaskSerializer # this is the serializer that we have written
+from .models import Task
+from .serializers import TaskSerializer # this is the serializer that we have written
 
 @api_view(['GET', 'POST'])
 def task_list(request):
@@ -108,7 +108,7 @@ def task_list(request):
 	if request.method == 'GET':
 		tasks = Tasks.objects.all() # getting all objects
 		serializer = TaskSerializer(tasks) # creating a serializer out of it
-		return Response(serializers.data)
+		return Response(serializers.data, many=True)
 
 	elif request.method == 'POST':
 		serializer = TaskSerializer(data=request.DATA) # first creating a serializer with the data 
