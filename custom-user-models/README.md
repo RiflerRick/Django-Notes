@@ -199,3 +199,139 @@ The command for taking fixtures is the following:
 
 `--index 4` basically json indent 4
 
+Now for loading the data to a new database, we obviously need to change the name of the database in the settings file. 
+
+`python manage.py loaddata products/fixtures/products.json`
+
+`loaddata` is the command for loading the data from the fixture json file that is given
+
+There are 2 other functions that need to be defined inside the custom user model
+
+```python
+def has_perm(self, perm, obj=None):
+	return True
+
+def has_module_perms(self, app_label):
+	return True
+```
+
+These are basically 2 different permission based functions that need to be defined
+
+Inside the admin file of the app we need to register the model if we want that model to be accessible from the admin page
+
+`admin.py`
+```python
+from django.contrib import admin
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+admin.site.register(User)
+```
+
+## User Admin
+
+Note that when we are building a model we might want to change the way in which an admin can see the model or make changes to the data in the model(basically edit the model). Here is how we can do that from the `admin.py` page.
+
+`admin.py`
+```python
+
+from django.contrib import admin
+from django.contrib.auth import get_user_model
+
+User = get_user_model()
+
+class UserAdmin(admin.ModelAdmin):
+	search_fields = ['email']
+	class Meta:
+		model = User
+
+admin.site.register(User, UserAdmin) 
+
+```
+
+That class `UserAdmin` will actually include a search field for the email. We can obviously do stuff like that from the admin page itself
+
+So for customizing this even more we can actually add custom forms in the `forms.py` file
+```python
+
+class UserAdminCreationForm(forms.ModelForm):
+	"""
+	this is like a simple form that will be displayed for User creation in the admin page
+	"""
+	password1 = forms.CharField(label="Password", widget=forms.PasswordInput)
+	password2 = forms.CharField(label="Password confirmation", widget=forms.PasswordInput)
+
+	class Meta:
+		model = User
+		fields = ('email') # this part is essentially the required fields
+
+	def clean_password2(self):
+		"""
+		clean_<field_name> function is called by django internally in order to clean the field value
+		"""
+		password1 = self.cleaned_data.get("password1")
+		password2 = self.cleaned_data.get("password2")
+		if password1 and password2 and password1 != password2:
+			raise ValidationError("Passwords don't match")
+		return password2
+
+	def save(self, commit=True):
+		user = super(UserAdminCreationForm, self).save(commit=False)
+		user.set_password(self.cleaned_data["password1"])
+		if commit:
+			user.save()
+		return user
+
+class UserAdminChangeForm(forms.ModelForm):
+	password = ReadOnlyPasswordHashField()
+	class Meta:
+		model = User
+		fields = ["email", "password", "active", "admin"]
+
+	def clean_password(self):
+		return self.initial["password"]
+
+```
+So basically what we just did here is created some custom forms for the admin page and changed what are the fields that the admin page is going to have for making changes to one entry of the model. Note that this is very important to understand. Here we are not changing how the listing on the admin page is going to be done for a particular model. Here we are simply concerned about what will be the fields when we make changes to one record or one entry of the model or when we create a new record or entry of the model.
+
+Now on the admin page we can write code for actually making changes to the way the model listing will look like. We can do that in the following way
+
+`admin.py`
+```python
+from django.contrib.auth.models import Group
+from django.contrib.auth.admin import UserAdmin as BaseUserAdmin
+
+from .forms import UserAdminCreationForm, UserAdminChangeForm
+
+class UserAdmin(BaseUserAdmin)
+	form = UserAdminChangeForm # this is the change form
+	add_form = UserAdminCreationForm # this is the creation form
+
+	list_display = ('email', 'admin') # this is going to describe how the list is displayed
+	list_filter = ('admin', 'staff', 'active') # this is going to describe what filters we are going to use
+
+	# fieldsets are the fields to be present in the change form
+	fieldsets = (
+		(None, {'fields':('email', 'password')}), # here basically we would get the 
+		('Personal_info', {'fields':()}),
+		('Permissions', {'fields':('admin', 'staff', 'active')})	
+	)
+
+	# add_fieldsets are the fields to be present in the add form
+	add_fieldsets = (
+		(None, {
+				'classes': ('wide'),
+				'fields': ('email', 'password1', 'password2')
+			}
+		)
+	)
+
+	search_fields = ('email')
+	ordering = ('email')
+	filter_horizontal = {}
+
+
+```
+
+
