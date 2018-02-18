@@ -179,3 +179,23 @@ class CustomUser(AbstractBaseUser):
 
 
 ```
+
+We need to change the built in user model to ours
+For this we need to add a new variable to the settings.py file 
+
+`AUTH_USER_MODEl = 'app1.User'`
+
+app1 is actually the name of the app where that User model exists
+
+**Note**: When we are dealing with a custom user model we may run into problems after creating migration files and migrating the models. Such problems might arise due to a change in the user model to be referenced especially if there is data already present in the original user model. To handle such issues and many others in general we might need to use the concept of fixtures to take the dump of the entire data in json or any other format and store it somewhere. This might also help when we are trying to migrate databases
+
+The command for taking fixtures is the following:
+`python manage.py dumpdata products.Product --format json --indent 4 > products/fixtures/products.json`
+
+`dumpdata` is the command
+`products.Product`- products is the name of the app and Product is the name of the model
+
+`--format json` will format the output in terms of json
+
+`--index 4` basically json indent 4
+
