@@ -148,3 +148,51 @@ def task_detail(request, pk): # recall that pk was used as part of the url itsel
 		task.delete() # task mind you is a model object
 		return Response(status=status.HTTP_204_NO_CONTENT)
 ```
+
+### Class Based Views
+
+A class based view can actually reduce our code a lot more than a function based implementation. One of the key benefits of using class based views is that they allow us to compose bits of reusable behaviour. The generic views provided by REST framework allow us to quickly build API views that maps closely to your database models.
+
+#### GenericAPIView
+
+This class extends REST framework's APIView class, adding commonly required behaviour for standard list and detail views.
+
+**Note:** Each of the concrete generic views is built by combining GenericAPIView, with one or more `mixins`.
+
+#### Attributes:
+
+**Basic Settings**
+
+* `queryset`- The queryset that should be used for returning objects from this view. Typically you must either set this attribute or override the `get_queryset()` method. If you are overriding a view method it is important we call `get_queryset()` instead of directly accessing the `queryset` as `queryset` will get evaluated once and those results will remain cached for all subsequent requests.
+
+* `serializer_class`- The serializer class that should be used for validating and deserializing the input and for serializing the output. Typically set this attribute or override the function `get_serializer_class()`.
+
+* `lookup_field`- The model field that should be used for performing object lookup of individual model instances. Defaults to `pk`. Note when using the hyperlinked APIs you will need to ensure that both API views and the serializer classes set the lookup_field property if you need to use a custom value.
+
+* `lookup_url_kwarg`- The url keyword argument that should be used for object lookup. The url conf should include a keyword argument corresponding to this value. If unset this defaults to using the same value as the 
+`lookup_field`.
+
+**Pagination:**
+
+`pagination_class`- The pagination class that should be used when paginating list results. Defaults to the same value as the `DEFAULT_PAGINATION_CLASS` setting which is `rest_framework.pagination.PageNumberPagination`. Setting pagination class to None will actually remove pagination. 
+
+**Filtering:**
+
+`filter_backends`- A list of filter_backend classes that should be used for filtering the queryset. Defaults to the same value as the `DEFAULT_FITLER_BACKENDS` setting.
+
+#### Methods:
+
+* `get_queryset(self)`
+
+Returns the queryset that should be used for list views, and that should be used for lookups in detail views. Defaults to returning the queryset specified by the `queryset` attribute.
+
+Should be overriden to provide dynamic behavior:
+
+```python
+def get_queryset(self):
+	user = self.request.user
+	# so we can actually get the request object from the ListAPIView class objects for instance.
+	return user.accouts.all()
+```
+
+* ``
