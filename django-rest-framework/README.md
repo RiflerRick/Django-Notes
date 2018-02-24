@@ -195,4 +195,99 @@ def get_queryset(self):
 	return user.accouts.all()
 ```
 
-* ``
+* `get_object(self)`
+
+Returns the object instane that should be used for detail view. Defaults to using the `lookup_field` parameter to filter the base queryset.
+
+For providing more complex behavior should be overriden.
+
+```python
+def get_object(self):
+	queryset = self.get_queryset()
+	# we get the base queryset
+	filter = {}
+	for field in self.multiple_lookup_fields:
+		filter[field] = self.kwargs[field]
+
+	obj = get_object_or_404(queryset, **filters)
+	self.check_object_permissions(self.request, obj)
+	return obj
+
+
+```
+
+**Note:**
+Few notes for the previous code:
+
+When we write `**filters` it simply means we are passing the keys of the filter dictionary as keyword arguments to a function. So basically if we write 
+
+```python
+def fun(a=1, b=2):
+	print(a)
+	print(b)
+
+fun()
+```
+
+This same code could also be written as 
+
+```python
+a = {'a':1, 'b':2}
+
+def fun(**kwargs):
+	for key in kwargs:
+		print(kwargs[key])
+
+fun(**a)
+```
+ Sometimes you will find functions written as:
+ ```python
+ def fun(*args, **kwargs):
+ 	pass
+ ```
+
+ Here basically `*args` is the positional arguments and **kwargs is the keyword arguments
+
+ For more info have a look [here](https://www.saltycrane.com/blog/2008/01/how-to-use-args-and-kwargs-in-python/)
+
+ Note that if your API does not have any object level permissions, you may optionally exclude the `self.check_object_permission` and simply return the object from get_object_or_404 lookup
+
+* `filter_queryset(self, queryset)`
+
+Given a queryset filter it with whichever filter backends are in use returning a new queryset
+
+```python
+def filter_queryset(self, queryset):
+	filter_backends = (CategoryFilter, ) # that additional comma makes it a tuple actually
+
+	if 'geo_route' in self.request.query_params:
+		filter_backends = (GeoRouteFilter, CategoryFilter)
+	elif 'geo_point' in self.request.query_params:
+		filter_backends = (GeoPointFilter, CategoryFilter)
+
+	for backend in list(filter_backends):
+		queryset = backend().filter_queryset(self.request, queryset, view=self)
+
+	return queryset
+```
+
+* `get_serializer_class(self)`
+
+Returns the serializer class that should be used for the serializer. Defaults to returning the `serializer_class` attribute. 
+
+```python
+def get_serializer_class(self):
+	if self.request.user.is_staff:
+		return FullAccountSerializer
+	return BasicAccountSerializer
+```
+
+#### Save and Deletion Hooks:
+
+The following methods are provided by the mixin classes, and provide easy overriding of the object save and deletion behaviours
+
+* `perform_create(self, serializer)`- Called by `CreateModelMixin` when saving a new object instance.
+* `perform_update(self, serializer)`- Called by `UpdateModelMixin` when saving an existing object.
+* `perform_destroy(self, instance)`- Called by `DestroyModelMixin` when deleting an object instance.
+
+These hooks are particularly useful for setting attributes that are implicit in the request, but are not part of the request data. For instance, you might set an attribute on the object based on the request user, or based on a URL keyword argument.
